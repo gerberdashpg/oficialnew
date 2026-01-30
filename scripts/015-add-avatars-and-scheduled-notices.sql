@@ -1,0 +1,9 @@
+-- Add avatar_url to users table
+ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+
+-- Add columns for scheduled notices
+ALTER TABLE notices ADD COLUMN IF NOT EXISTS is_recurring BOOLEAN DEFAULT FALSE;
+ALTER TABLE notices ADD COLUMN IF NOT EXISTS recurrence_days INTEGER;
+ALTER TABLE notices ADD COLUMN IF NOT EXISTS last_sent_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE notices ADD COLUMN IF NOT EXISTS next_send_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE notices ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE;
