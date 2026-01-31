@@ -5,7 +5,7 @@ import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { toast } from "@/components/ui/toast" // Import toast variable
+import { toast } from "@/components/ui/use-toast"
 import {
   Table,
   TableBody,
