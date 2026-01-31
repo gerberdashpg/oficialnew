@@ -3,11 +3,23 @@ import { sql } from "@/lib/db"
 import { NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 
+function normalizeRole(input: string | undefined | null) {
+  const r = (input ?? "").trim();
+
+  if (!r) return "CLIENTE";
+  if (r === "ADMIN" || r === "Administrador") return "ADMIN";
+  if (r === "CLIENTE" || r === "Cliente") return "CLIENTE";
+  if (r === "NEXUS_GROWTH" || r === "Nexus Growth" || r === "NEXUS GROWTH")
+    return "NEXUS_GROWTH";
+
+  return null;
+}
+
 export async function GET() {
   const session = await getSession()
-  if (!session || (session.role !== "ADMIN" && session.role !== "Administrador")) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
+  if (!session || session.role !== "ADMIN") {
+  return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+}
 
   try {
     const users = await sql`
@@ -24,9 +36,9 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const session = await getSession()
-  if (!session || (session.role !== "ADMIN" && session.role !== "Administrador")) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
+  if (!session || session.role !== "ADMIN") {
+  return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+}
 
   const body = await request.json()
   const { client_id, name, email, password, role } = body
@@ -36,7 +48,7 @@ export async function POST(request: Request) {
   }
 
   // If role is not admin, client_id might be needed
-  const isAdminRole = role === "ADMIN" || role === "Administrador"
+  const isAdminRole = role === "Admin" || role === "Administrador"
 
   try {
     // Check if email already exists
