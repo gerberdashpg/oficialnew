@@ -5,7 +5,11 @@ import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+<<<<<<< HEAD
 import { toast } from "sonner"
+=======
+import { toast } from "@/components/ui/use-toast"
+>>>>>>> 14954a2f45efc73593ca66c937559d2d9a15171c
 import {
   Table,
   TableBody,
@@ -74,7 +78,10 @@ interface UsersTableProps {
   users: User[]
   clients: Client[]
   roles: Role[]
+<<<<<<< HEAD
   userRole?: string
+=======
+>>>>>>> 14954a2f45efc73593ca66c937559d2d9a15171c
 }
 
 // Helper to get role color style from hex
@@ -92,6 +99,7 @@ const legacyRoleColors: Record<string, { bg: string, text: string, border: strin
   Administrador: { bg: "#A855F733", text: "#A855F7", border: "#A855F766" },
   CLIENTE: { bg: "#3B82F633", text: "#3B82F6", border: "#3B82F666" },
   Cliente: { bg: "#3B82F633", text: "#3B82F6", border: "#3B82F666" },
+<<<<<<< HEAD
   "Nexus Growth": { bg: "#F9731633", text: "#F97316", border: "#F9731666" },
 }
 
@@ -99,6 +107,11 @@ export function UsersTable({ users: initialUsers, clients, roles, userRole = "AD
   // Check if user can edit/delete (Nexus Growth can only view)
   const canEdit = userRole === "ADMIN" || userRole === "Administrador"
   
+=======
+}
+
+export function UsersTable({ users: initialUsers, clients, roles }: UsersTableProps) {
+>>>>>>> 14954a2f45efc73593ca66c937559d2d9a15171c
   // Create a map for quick role lookup
   const roleMap = roles.reduce((acc, role) => {
     acc[role.name] = role
@@ -134,26 +147,38 @@ export function UsersTable({ users: initialUsers, clients, roles, userRole = "AD
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
+    console.log("[v0] handleCreate called with form:", createForm)
     setIsLoading(true)
 
     try {
+<<<<<<< HEAD
       const formData = {
         ...createForm,
         client_id: createForm.client_id === "none" ? null : createForm.client_id,
       }
+=======
+      console.log("[v0] Sending POST to /api/admin/users")
+>>>>>>> 14954a2f45efc73593ca66c937559d2d9a15171c
       const res = await fetch("/api/admin/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       })
 
+<<<<<<< HEAD
       const data = await res.json()
+=======
+      console.log("[v0] Response status:", res.status)
+      const data = await res.json()
+      console.log("[v0] Response data:", data)
+>>>>>>> 14954a2f45efc73593ca66c937559d2d9a15171c
 
       if (res.ok) {
         const { user: newUser } = data
         const client = clients.find(c => c.id === createForm.client_id)
         setUsers([{ ...newUser, client_name: client?.name || null }, ...users])
         setIsCreateOpen(false)
+<<<<<<< HEAD
         setCreateForm({ name: "", email: "", password: "", role: roles.length > 0 ? roles[0].name : "Cliente", client_id: "none" })
         toast.success("Usuario criado com sucesso")
       } else {
@@ -162,6 +187,24 @@ export function UsersTable({ users: initialUsers, clients, roles, userRole = "AD
     } catch (error) {
       console.error("Error creating user:", error)
       toast.error("Falha ao criar usuario")
+=======
+        setCreateForm({ name: "", email: "", password: "", role: "Cliente", client_id: "" })
+      } else {
+        console.log("[v0] Error response:", data.error)
+        toast({
+          title: "Erro",
+          description: data.error || "Falha ao criar usuário",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error("[v0] Error creating user:", error)
+      toast({
+        title: "Erro",
+        description: "Falha ao criar usuário",
+        variant: "destructive",
+      })
+>>>>>>> 14954a2f45efc73593ca66c937559d2d9a15171c
     } finally {
       setIsLoading(false)
     }
@@ -180,6 +223,7 @@ export function UsersTable({ users: initialUsers, clients, roles, userRole = "AD
 
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault()
+<<<<<<< HEAD
     if (!editUser) {
       return
     }
@@ -190,12 +234,21 @@ export function UsersTable({ users: initialUsers, clients, roles, userRole = "AD
         ...editForm,
         client_id: editForm.client_id === "none" || editForm.client_id === "" ? null : editForm.client_id,
       }
+=======
+    if (!editUser) return
+    console.log("[v0] handleSaveEdit called with form:", editForm)
+    setIsLoading(true)
+
+    try {
+      console.log("[v0] Sending PUT to /api/admin/users/" + editUser.id)
+>>>>>>> 14954a2f45efc73593ca66c937559d2d9a15171c
       const res = await fetch(`/api/admin/users/${editUser.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       })
 
+<<<<<<< HEAD
       const data = await res.json()
 
       if (res.ok) {
@@ -215,6 +268,34 @@ export function UsersTable({ users: initialUsers, clients, roles, userRole = "AD
     } catch (error) {
       console.error("Error updating user:", error)
       toast.error("Falha ao atualizar usuario")
+=======
+      console.log("[v0] Response status:", res.status)
+      const data = await res.json()
+      console.log("[v0] Response data:", data)
+
+      if (res.ok) {
+        setUsers(users.map((u) => (u.id === editUser.id ? { ...u, ...data } : u)))
+        setEditUser(null)
+        toast({
+          title: "Sucesso",
+          description: "Usuário atualizado com sucesso",
+        })
+      } else {
+        console.log("[v0] Error response:", data.error)
+        toast({
+          title: "Erro",
+          description: data.error || "Falha ao atualizar usuário",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error("[v0] Error updating user:", error)
+      toast({
+        title: "Erro",
+        description: "Falha ao atualizar usuário",
+        variant: "destructive",
+      })
+>>>>>>> 14954a2f45efc73593ca66c937559d2d9a15171c
     } finally {
       setIsLoading(false)
     }
@@ -573,7 +654,11 @@ export function UsersTable({ users: initialUsers, clients, roles, userRole = "AD
                 </SelectContent>
               </Select>
             </div>
+<<<<<<< HEAD
             {createForm.role !== "Administrador" && createForm.role !== "ADMIN" && createForm.role !== "Nexus Growth" && (
+=======
+            {createForm.role !== "Administrador" && createForm.role !== "ADMIN" && (
+>>>>>>> 14954a2f45efc73593ca66c937559d2d9a15171c
               <div className="space-y-2">
                 <Label className="text-zinc-300">Cliente</Label>
                 <Select

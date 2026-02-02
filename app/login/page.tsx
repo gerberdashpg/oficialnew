@@ -45,9 +45,13 @@ export default function LoginPage() {
       // Small delay to ensure cookies are set
       await new Promise(resolve => setTimeout(resolve, 100))
       
+<<<<<<< HEAD
       // Admin roles redirect to admin dashboard
       const adminRoles = ["ADMIN", "Administrador", "Nexus Growth"]
       if (adminRoles.includes(data.user.role)) {
+=======
+      if (data.user.role === "ADMIN" || data.user.role === "Administrador") {
+>>>>>>> 14954a2f45efc73593ca66c937559d2d9a15171c
         window.location.href = "/admin"
       } else if (data.user.client_slug) {
         window.location.href = `/dashboards/${data.user.client_slug}`
