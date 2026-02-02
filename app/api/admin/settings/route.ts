@@ -7,8 +7,10 @@ const sql = neon(process.env.DATABASE_URL!)
 export async function GET() {
   try {
     const session = await getSession()
-    
-    if (!session || session.role !== "ADMIN") {
+
+    // Nexus Growth can view settings
+    const viewRoles = ["ADMIN", "Administrador", "Nexus Growth"]
+    if (!session || !viewRoles.includes(session.role)) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 403 })
     }
 

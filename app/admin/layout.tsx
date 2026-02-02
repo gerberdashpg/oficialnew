@@ -14,8 +14,8 @@ export default async function AdminLayout({
     redirect("/login")
   }
 
-  // Only admins can access
-  if (session.role !== "ADMIN") {
+  // Only admins and Nexus Growth can access
+  if (session.role !== "ADMIN" && session.role !== "Administrador" && session.role !== "Nexus Growth") {
     redirect("/dashboard")
   }
 

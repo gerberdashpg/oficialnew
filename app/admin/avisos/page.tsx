@@ -24,7 +24,8 @@ async function getClients() {
 export default async function AdminNoticesPage() {
   const session = await getSession()
 
-  if (!session || session.role !== "ADMIN") {
+  const adminRoles = ["ADMIN", "Administrador", "Nexus Growth"]
+  if (!session || !adminRoles.includes(session.role)) {
     redirect("/login")
   }
 

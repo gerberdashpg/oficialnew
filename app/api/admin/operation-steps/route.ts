@@ -5,7 +5,9 @@ import { sql } from "@/lib/db"
 export async function POST(request: Request) {
   const session = await getSession()
 
-  if (!session || session.role !== "ADMIN") {
+  // Nexus Growth can create/edit operation steps
+  const adminRoles = ["ADMIN", "Administrador", "Nexus Growth"]
+  if (!session || !adminRoles.includes(session.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 

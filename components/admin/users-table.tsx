@@ -5,6 +5,7 @@ import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { toast } from "sonner"
 import {
   Table,
   TableBody,
@@ -63,17 +64,46 @@ interface Client {
   name: string
 }
 
+interface Role {
+  id: string
+  name: string
+  color: string
+}
+
 interface UsersTableProps {
   users: User[]
   clients: Client[]
+  roles: Role[]
+  userRole?: string
 }
 
-const roleColors: Record<string, string> = {
-  ADMIN: "bg-purple-500/20 text-purple-400 border-purple-500/30",
-  CLIENTE: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+// Helper to get role color style from hex
+function getRoleColorStyle(color: string) {
+  return {
+    backgroundColor: `${color}33`,
+    color: color,
+    borderColor: `${color}66`,
+  }
 }
 
-export function UsersTable({ users: initialUsers, clients }: UsersTableProps) {
+// Fallback colors for legacy role names
+const legacyRoleColors: Record<string, { bg: string, text: string, border: string }> = {
+  ADMIN: { bg: "#A855F733", text: "#A855F7", border: "#A855F766" },
+  Administrador: { bg: "#A855F733", text: "#A855F7", border: "#A855F766" },
+  CLIENTE: { bg: "#3B82F633", text: "#3B82F6", border: "#3B82F666" },
+  Cliente: { bg: "#3B82F633", text: "#3B82F6", border: "#3B82F666" },
+  "Nexus Growth": { bg: "#F9731633", text: "#F97316", border: "#F9731666" },
+}
+
+export function UsersTable({ users: initialUsers, clients, roles, userRole = "ADMIN" }: UsersTableProps) {
+  // Check if user can edit/delete (Nexus Growth can only view)
+  const canEdit = userRole === "ADMIN" || userRole === "Administrador"
+  
+  // Create a map for quick role lookup
+  const roleMap = roles.reduce((acc, role) => {
+    acc[role.name] = role
+    return acc
+  }, {} as Record<string, Role>)
   const [users, setUsers] = useState(initialUsers)
   const [search, setSearch] = useState("")
   const [editUser, setEditUser] = useState<User | null>(null)
@@ -84,14 +114,15 @@ export function UsersTable({ users: initialUsers, clients }: UsersTableProps) {
     email: "",
     password: "",
     role: "",
+    client_id: "none",
   })
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [createForm, setCreateForm] = useState({
     name: "",
     email: "",
     password: "",
-    role: "CLIENTE",
-    client_id: "",
+    role: roles.length > 0 ? roles[0].name : "Cliente",
+    client_id: "none",
   })
 
   const filteredUsers = users.filter(
@@ -106,21 +137,31 @@ export function UsersTable({ users: initialUsers, clients }: UsersTableProps) {
     setIsLoading(true)
 
     try {
+      const formData = {
+        ...createForm,
+        client_id: createForm.client_id === "none" ? null : createForm.client_id,
+      }
       const res = await fetch("/api/admin/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(createForm),
+        body: JSON.stringify(formData),
       })
 
+      const data = await res.json()
+
       if (res.ok) {
-        const { user: newUser } = await res.json()
+        const { user: newUser } = data
         const client = clients.find(c => c.id === createForm.client_id)
         setUsers([{ ...newUser, client_name: client?.name || null }, ...users])
         setIsCreateOpen(false)
-        setCreateForm({ name: "", email: "", password: "", role: "CLIENTE", client_id: "" })
+        setCreateForm({ name: "", email: "", password: "", role: roles.length > 0 ? roles[0].name : "Cliente", client_id: "none" })
+        toast.success("Usuario criado com sucesso")
+      } else {
+        toast.error(data.error || "Falha ao criar usuario")
       }
     } catch (error) {
       console.error("Error creating user:", error)
+      toast.error("Falha ao criar usuario")
     } finally {
       setIsLoading(false)
     }
@@ -133,28 +174,47 @@ export function UsersTable({ users: initialUsers, clients }: UsersTableProps) {
       email: user.email,
       password: "",
       role: user.role,
+      client_id: user.client_id || "none",
     })
   }
 
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!editUser) return
+    if (!editUser) {
+      return
+    }
     setIsLoading(true)
 
     try {
+      const formData = {
+        ...editForm,
+        client_id: editForm.client_id === "none" || editForm.client_id === "" ? null : editForm.client_id,
+      }
       const res = await fetch(`/api/admin/users/${editUser.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editForm),
+        body: JSON.stringify(formData),
       })
 
+      const data = await res.json()
+
       if (res.ok) {
-        const updated = await res.json()
-        setUsers(users.map((u) => (u.id === editUser.id ? { ...u, ...updated } : u)))
+        const client = clients.find((c) => c.id === editForm.client_id)
+        setUsers(
+          users.map((u) =>
+            u.id === editUser.id
+              ? { ...u, ...data, client_name: client?.name || null }
+              : u
+          )
+        )
         setEditUser(null)
+        toast.success("Usuario atualizado com sucesso")
+      } else {
+        toast.error(data.error || "Falha ao atualizar usuario")
       }
     } catch (error) {
       console.error("Error updating user:", error)
+      toast.error("Falha ao atualizar usuario")
     } finally {
       setIsLoading(false)
     }
@@ -169,11 +229,17 @@ export function UsersTable({ users: initialUsers, clients }: UsersTableProps) {
         method: "DELETE",
       })
 
+      const data = await res.json()
+
       if (res.ok) {
         setUsers(users.filter((u) => u.id !== deleteId))
+        toast.success("Usuario excluido com sucesso")
+      } else {
+        toast.error(data.error || "Falha ao excluir usuario")
       }
     } catch (error) {
       console.error("Error deleting user:", error)
+      toast.error("Falha ao excluir usuario")
     } finally {
       setIsLoading(false)
       setDeleteId(null)
@@ -192,10 +258,12 @@ export function UsersTable({ users: initialUsers, clients }: UsersTableProps) {
             className="pl-10 bg-zinc-900/50 border-zinc-800 text-white placeholder:text-zinc-500 focus:border-purple-500"
           />
         </div>
-        <Button onClick={() => setIsCreateOpen(true)} className="bg-purple-600 hover:bg-purple-700 text-white">
-          <Users className="w-4 h-4 mr-2" />
-          Novo Usuário
-        </Button>
+        {canEdit && (
+          <Button onClick={() => setIsCreateOpen(true)} className="bg-purple-600 hover:bg-purple-700 text-white">
+            <Users className="w-4 h-4 mr-2" />
+            Novo Usuário
+          </Button>
+        )}
       </div>
 
       <Table>
@@ -225,10 +293,18 @@ export function UsersTable({ users: initialUsers, clients }: UsersTableProps) {
                       </div>
                     ) : (
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        user.role === "ADMIN" ? "bg-purple-500/20" : "bg-blue-500/20"
+                        user.role === "ADMIN" || user.role === "Administrador" 
+                          ? "bg-purple-500/20" 
+                          : user.role === "Nexus Growth" 
+                            ? "bg-orange-500/20" 
+                            : "bg-blue-500/20"
                       }`}>
                         <span className={`font-bold ${
-                          user.role === "ADMIN" ? "text-purple-400" : "text-blue-400"
+                          user.role === "ADMIN" || user.role === "Administrador" 
+                            ? "text-purple-400" 
+                            : user.role === "Nexus Growth" 
+                              ? "text-orange-400" 
+                              : "text-blue-400"
                         }`}>
                           {user.name.charAt(0)}
                         </span>
@@ -239,9 +315,29 @@ export function UsersTable({ users: initialUsers, clients }: UsersTableProps) {
                 </TableCell>
                 <TableCell className="text-zinc-300">{user.email}</TableCell>
                 <TableCell>
-                  <Badge variant="outline" className={roleColors[user.role]}>
-                    {user.role}
-                  </Badge>
+                  {roleMap[user.role] ? (
+                    <Badge 
+                      variant="outline" 
+                      style={getRoleColorStyle(roleMap[user.role].color)}
+                    >
+                      {user.role}
+                    </Badge>
+                  ) : legacyRoleColors[user.role] ? (
+                    <Badge 
+                      variant="outline" 
+                      style={{
+                        backgroundColor: legacyRoleColors[user.role].bg,
+                        color: legacyRoleColors[user.role].text,
+                        borderColor: legacyRoleColors[user.role].border,
+                      }}
+                    >
+                      {user.role}
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="bg-zinc-500/20 text-zinc-400 border-zinc-500/30">
+                      {user.role}
+                    </Badge>
+                  )}
                 </TableCell>
                 <TableCell>
                   {user.client_name ? (
@@ -265,22 +361,33 @@ export function UsersTable({ users: initialUsers, clients }: UsersTableProps) {
                         <MoreHorizontal className="w-4 h-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800">
-                      <DropdownMenuItem 
-                        className="text-zinc-300 focus:text-white focus:bg-zinc-800 cursor-pointer"
-                        onClick={() => handleEdit(user)}
-                      >
-                        <Edit className="w-4 h-4 mr-2" />
-                        Editar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        className="text-red-400 focus:text-red-400 focus:bg-red-950 cursor-pointer"
-                        onClick={() => setDeleteId(user.id)}
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Excluir
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
+                      <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800">
+                        {canEdit ? (
+                          <>
+                            <DropdownMenuItem
+                              className="text-zinc-300 focus:text-white focus:bg-zinc-800 cursor-pointer"
+                              onClick={() => handleEdit(user)}
+                            >
+                              <Edit className="w-4 h-4 mr-2" />
+                              Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-red-400 focus:text-red-400 focus:bg-red-950 cursor-pointer"
+                              onClick={() => setDeleteId(user.id)}
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Excluir
+                            </DropdownMenuItem>
+                          </>
+                        ) : (
+                          <DropdownMenuItem
+                            className="text-zinc-500 cursor-not-allowed"
+                            disabled
+                          >
+                            Sem permissao para editar
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
               </TableRow>
@@ -337,22 +444,58 @@ export function UsersTable({ users: initialUsers, clients }: UsersTableProps) {
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-zinc-300">Tipo</Label>
+              <Label className="text-zinc-300">Role</Label>
               <Select
                 value={editForm.role}
-                onValueChange={(value) => setEditForm({ ...editForm, role: value })}
+                onValueChange={(value) => setEditForm({ ...editForm, role: value, client_id: value === "Administrador" || value === "ADMIN" || value === "Nexus Growth" ? "none" : editForm.client_id })}
               >
                 <SelectTrigger className="bg-zinc-900/50 border-zinc-700 text-white">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-zinc-900 border-zinc-800">
-                  <SelectItem value="ADMIN" className="text-zinc-300 focus:text-white focus:bg-zinc-800">Admin</SelectItem>
-                  <SelectItem value="CLIENTE" className="text-zinc-300 focus:text-white focus:bg-zinc-800">Cliente</SelectItem>
+                  {roles.map((role) => (
+                    <SelectItem 
+                      key={role.id} 
+                      value={role.name} 
+                      className="text-zinc-300 focus:text-white focus:bg-zinc-800"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: role.color }} 
+                        />
+                        {role.name}
+                      </div>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
+            {editForm.role !== "Administrador" && editForm.role !== "ADMIN" && editForm.role !== "Nexus Growth" && (
+              <div className="space-y-2">
+                <Label className="text-zinc-300">Cliente</Label>
+                <Select
+                  value={editForm.client_id}
+                  onValueChange={(value) => setEditForm({ ...editForm, client_id: value })}
+                >
+                  <SelectTrigger className="bg-zinc-900/50 border-zinc-700 text-white">
+                    <SelectValue placeholder="Selecione um cliente" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-zinc-800">
+                    <SelectItem value="none" className="text-zinc-500 focus:text-white focus:bg-zinc-800">
+                      Nenhum cliente
+                    </SelectItem>
+                    {clients.map((client) => (
+                      <SelectItem key={client.id} value={client.id} className="text-zinc-300 focus:text-white focus:bg-zinc-800">
+                        {client.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="flex gap-2 justify-end">
-              <Button type="button" variant="outline" onClick={() => setEditUser(null)} className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">
+              <Button type="button" variant="outline" onClick={() => setEditUser(null)} className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 bg-transparent">
                 Cancelar
               </Button>
               <Button type="submit" disabled={isLoading} className="bg-purple-600 hover:bg-purple-700 text-white">
@@ -403,7 +546,7 @@ export function UsersTable({ users: initialUsers, clients }: UsersTableProps) {
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-zinc-300">Tipo</Label>
+              <Label className="text-zinc-300">Role</Label>
               <Select
                 value={createForm.role}
                 onValueChange={(value) => setCreateForm({ ...createForm, role: value })}
@@ -412,12 +555,25 @@ export function UsersTable({ users: initialUsers, clients }: UsersTableProps) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-zinc-900 border-zinc-800">
-                  <SelectItem value="ADMIN" className="text-zinc-300 focus:text-white focus:bg-zinc-800">Admin</SelectItem>
-                  <SelectItem value="CLIENTE" className="text-zinc-300 focus:text-white focus:bg-zinc-800">Cliente</SelectItem>
+                  {roles.map((role) => (
+                    <SelectItem 
+                      key={role.id} 
+                      value={role.name} 
+                      className="text-zinc-300 focus:text-white focus:bg-zinc-800"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: role.color }} 
+                        />
+                        {role.name}
+                      </div>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
-            {createForm.role === "CLIENTE" && (
+            {createForm.role !== "Administrador" && createForm.role !== "ADMIN" && createForm.role !== "Nexus Growth" && (
               <div className="space-y-2">
                 <Label className="text-zinc-300">Cliente</Label>
                 <Select

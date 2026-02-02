@@ -40,12 +40,19 @@ export default function LoginPage() {
         return
       }
 
-      if (data.user.role === "ADMIN") {
-        router.push("/admin")
+      router.refresh()
+      
+      // Small delay to ensure cookies are set
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
+      // Admin roles redirect to admin dashboard
+      const adminRoles = ["ADMIN", "Administrador", "Nexus Growth"]
+      if (adminRoles.includes(data.user.role)) {
+        window.location.href = "/admin"
       } else if (data.user.client_slug) {
-        router.push(`/dashboards/${data.user.client_slug}`)
+        window.location.href = `/dashboards/${data.user.client_slug}`
       } else {
-        router.push("/dashboard")
+        window.location.href = "/dashboard"
       }
     } catch {
       setError("Erro de conexão. Tente novamente.")

@@ -47,6 +47,7 @@ interface Client {
 
 interface ClientsTableProps {
   clients: Client[]
+  userRole?: string
 }
 
 const planColors: Record<string, string> = {
@@ -61,12 +62,15 @@ const statusColors: Record<string, string> = {
   ONBOARDING: "bg-blue-500/20 text-blue-400 border-blue-500/30",
 }
 
-export function ClientsTable({ clients: initialClients }: ClientsTableProps) {
+export function ClientsTable({ clients: initialClients, userRole = "ADMIN" }: ClientsTableProps) {
   const router = useRouter()
   const [clients, setClients] = useState(initialClients)
   const [search, setSearch] = useState("")
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  
+  // Check if user can edit/delete (Nexus Growth can only view)
+  const canEdit = userRole === "ADMIN" || userRole === "Administrador"
 
   const filteredClients = clients.filter(
     (client) =>
@@ -106,12 +110,14 @@ export function ClientsTable({ clients: initialClients }: ClientsTableProps) {
             className="pl-10 bg-zinc-900/50 border-zinc-800 text-white placeholder:text-zinc-500 focus:border-purple-500"
           />
         </div>
-        <Link href="/admin/clientes/novo" className="shrink-0">
-          <Button className="bg-purple-600 hover:bg-purple-700 text-white w-full sm:w-auto">
-            <Plus className="w-4 h-4 mr-2" />
-            <span className="sm:inline">Novo Cliente</span>
-          </Button>
-        </Link>
+{canEdit && (
+          <Link href="/admin/clientes/novo" className="shrink-0">
+            <Button className="bg-purple-600 hover:bg-purple-700 text-white w-full sm:w-auto">
+              <Plus className="w-4 h-4 mr-2" />
+              <span className="sm:inline">Novo Cliente</span>
+            </Button>
+          </Link>
+        )}
       </div>
 
       {/* Desktop Table */}
@@ -195,20 +201,24 @@ export function ClientsTable({ clients: initialClients }: ClientsTableProps) {
                           <Eye className="w-4 h-4 mr-2" />
                           Visualizar
                         </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          className="text-zinc-300 focus:text-white focus:bg-zinc-800 cursor-pointer"
-                          onClick={() => router.push(`/admin/clientes/${client.id}/editar`)}
-                        >
-                          <Edit className="w-4 h-4 mr-2" />
-                          Editar
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          className="text-red-400 focus:text-red-400 focus:bg-red-950 cursor-pointer"
-                          onClick={() => setDeleteId(client.id)}
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Excluir
-                        </DropdownMenuItem>
+                        {canEdit && (
+                          <>
+                            <DropdownMenuItem 
+                              className="text-zinc-300 focus:text-white focus:bg-zinc-800 cursor-pointer"
+                              onClick={() => router.push(`/admin/clientes/${client.id}/editar`)}
+                            >
+                              <Edit className="w-4 h-4 mr-2" />
+                              Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              className="text-red-400 focus:text-red-400 focus:bg-red-950 cursor-pointer"
+                              onClick={() => setDeleteId(client.id)}
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Excluir
+                            </DropdownMenuItem>
+                          </>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>

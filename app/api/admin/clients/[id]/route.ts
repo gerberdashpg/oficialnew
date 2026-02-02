@@ -9,7 +9,9 @@ export async function GET(
   const { id } = await params
   const session = await getSession()
 
-  if (!session || session.role !== "ADMIN") {
+  // Nexus Growth can view client details
+  const viewRoles = ["ADMIN", "Administrador", "Nexus Growth"]
+  if (!session || !viewRoles.includes(session.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
@@ -34,7 +36,9 @@ export async function PUT(
   const { id } = await params
   const session = await getSession()
 
-  if (!session || session.role !== "ADMIN") {
+  // Only ADMIN can edit clients (Nexus Growth cannot)
+  const editRoles = ["ADMIN", "Administrador"]
+  if (!session || !editRoles.includes(session.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
@@ -49,7 +53,7 @@ export async function PUT(
     }
 
     // Check if slug already exists for another client
-    const existingSlug = await sql`SELECT id FROM clients WHERE slug = ${slug} AND id != ${id}`
+    const existingSlug = await sql`SELECT id FROM clients WHERE slug = ${slug} AND id <> ${id}`
     if (existingSlug.length > 0) {
       return NextResponse.json(
         { error: "Ja existe outro cliente com esse slug" },
@@ -88,7 +92,9 @@ export async function DELETE(
   const { id } = await params
   const session = await getSession()
 
-  if (!session || session.role !== "ADMIN") {
+  // Only ADMIN can delete clients (Nexus Growth cannot)
+  const deleteRoles = ["ADMIN", "Administrador"]
+  if (!session || !deleteRoles.includes(session.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 

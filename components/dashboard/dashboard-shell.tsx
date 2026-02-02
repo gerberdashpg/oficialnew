@@ -10,7 +10,7 @@ interface DashboardShellProps {
   user: {
     name: string
     email: string
-    role: "ADMIN" | "CLIENTE"
+    role: "ADMIN" | "CLIENTE" | "Nexus Growth"
     client?: {
       name: string
       slug: string

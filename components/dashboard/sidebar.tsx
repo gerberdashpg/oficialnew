@@ -40,7 +40,7 @@ interface SidebarProps {
   user: {
     name: string
     email: string
-    role: "ADMIN" | "CLIENTE"
+    role: "ADMIN" | "CLIENTE" | "Nexus Growth"
     avatar_url?: string
     client?: {
       name: string
@@ -75,6 +75,17 @@ const adminNavItems = [
   { href: "/admin/configuracoes", label: "Configurações", icon: Settings },
 ]
 
+// Nav items for Nexus Growth role (limited access)
+const nexusGrowthNavItems = [
+  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/clientes", label: "Clientes", icon: Building2 },
+  { href: "/admin/usuarios", label: "Usuários", icon: Users },
+  { href: "/admin/mapa", label: "Mapa da Operação", icon: Map },
+  { href: "/admin/relatorios-semanais", label: "Relatórios Semanais", icon: FileText },
+  { href: "/admin/avisos", label: "Avisos", icon: Bell },
+  { href: "/admin/configuracoes", label: "Configurações", icon: Settings },
+]
+
 export function DashboardSidebar({ user, slug, hasWeeklyReports }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
@@ -87,8 +98,19 @@ export function DashboardSidebar({ user, slug, hasWeeklyReports }: SidebarProps)
   const clientNavItems = user.role === "CLIENTE" && !hasWeeklyReports
     ? allClientNavItems.filter(item => !item.href.includes('/leitura-semanal'))
     : allClientNavItems
-    
-  const navItems = user.role === "ADMIN" ? adminNavItems : clientNavItems
+  
+  // Select nav items based on user role
+  const getNavItems = () => {
+    if (user.role === "ADMIN" || user.role === "Administrador") {
+      return adminNavItems
+    }
+    if (user.role === "Nexus Growth") {
+      return nexusGrowthNavItems
+    }
+    return clientNavItems
+  }
+  
+  const navItems = getNavItems()
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" })
@@ -96,7 +118,7 @@ export function DashboardSidebar({ user, slug, hasWeeklyReports }: SidebarProps)
   }
 
   const isActive = (href: string) => {
-    if (user.role === "ADMIN") {
+    if (user.role === "ADMIN" || user.role === "Administrador" || user.role === "Nexus Growth") {
       return pathname === href || (href !== "/admin" && pathname.startsWith(href))
     }
     // For client routes, exact match or starts with (but not just the base dashboard)

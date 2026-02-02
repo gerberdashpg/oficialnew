@@ -50,7 +50,8 @@ const statusColors: Record<string, string> = {
 export default async function AdminDashboardPage() {
   const session = await getSession()
 
-  if (!session || session.role !== "ADMIN") {
+  const adminRoles = ["ADMIN", "Administrador", "Nexus Growth"]
+  if (!session || !adminRoles.includes(session.role)) {
     redirect("/login")
   }
 

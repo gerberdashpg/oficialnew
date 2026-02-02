@@ -11,7 +11,8 @@ import { Settings, Shield, Bell, Database, Globe } from "lucide-react"
 export default async function AdminSettingsPage() {
   const session = await getSession()
 
-  if (!session || session.role !== "ADMIN") {
+  const adminRoles = ["ADMIN", "Administrador", "Nexus Growth"]
+  if (!session || !adminRoles.includes(session.role)) {
     redirect("/login")
   }
 

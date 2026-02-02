@@ -7,7 +7,8 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getSession()
-  if (!session || session.role !== "ADMIN") {
+  const adminRoles = ["ADMIN", "Administrador", "Nexus Growth"]
+  if (!session || !adminRoles.includes(session.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
@@ -61,7 +62,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getSession()
-  if (!session || session.role !== "ADMIN") {
+  const adminRoles = ["ADMIN", "Administrador", "Nexus Growth"]
+  if (!session || !adminRoles.includes(session.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 

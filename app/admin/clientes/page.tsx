@@ -19,7 +19,8 @@ async function getClients() {
 export default async function AdminClientsPage() {
   const session = await getSession()
 
-  if (!session || session.role !== "ADMIN") {
+  const adminRoles = ["ADMIN", "Administrador", "Nexus Growth"]
+  if (!session || !adminRoles.includes(session.role)) {
     redirect("/login")
   }
 
@@ -36,7 +37,7 @@ export default async function AdminClientsPage() {
 
       <div className="px-4 sm:px-6 pb-6">
         <Card className="bg-[#0D0D12] border-purple-500/20 overflow-hidden">
-          <ClientsTable clients={clients} />
+          <ClientsTable clients={clients} userRole={session.role} />
         </Card>
       </div>
     </div>

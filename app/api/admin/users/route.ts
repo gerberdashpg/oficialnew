@@ -5,7 +5,8 @@ import bcrypt from "bcryptjs"
 
 export async function GET() {
   const session = await getSession()
-  if (!session || session.role !== "ADMIN") {
+  const adminRoles = ["ADMIN", "Administrador", "Nexus Growth"]
+  if (!session || !adminRoles.includes(session.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
@@ -24,7 +25,10 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const session = await getSession()
-  if (!session || session.role !== "ADMIN") {
+  
+  // Only ADMIN can create users (Nexus Growth can only view)
+  const createRoles = ["ADMIN", "Administrador"]
+  if (!session || !createRoles.includes(session.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
@@ -32,34 +36,51 @@ export async function POST(request: Request) {
   const { client_id, name, email, password, role } = body
 
   if (!name || !email || !password) {
-    return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+    return NextResponse.json({ error: "Preencha todos os campos obrigatorios" }, { status: 400 })
   }
 
-  // If role is CLIENTE, client_id is required
-  if (role === "CLIENTE" && !client_id) {
-    return NextResponse.json({ error: "Client is required for CLIENTE role" }, { status: 400 })
+  if (!role) {
+    return NextResponse.json({ error: "Selecione uma role para o usuario" }, { status: 400 })
   }
+
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailRegex.test(email)) {
+    return NextResponse.json({ error: "Email invalido" }, { status: 400 })
+  }
+
+  // Validate password length
+  if (password.length < 6) {
+    return NextResponse.json({ error: "A senha deve ter no minimo 6 caracteres" }, { status: 400 })
+  }
+
+  // If role is not admin, client_id might be needed
+  const isAdminRole = role === "ADMIN" || role === "Administrador"
 
   try {
     // Check if email already exists
     const existing = await sql`SELECT id FROM users WHERE email = ${email}`
     if (existing.length > 0) {
-      return NextResponse.json({ error: "Email already exists" }, { status: 400 })
+      return NextResponse.json({ error: "Este email ja esta em uso" }, { status: 400 })
     }
 
+    // Get role_id if it exists
+    const roleResult = await sql`SELECT id FROM roles WHERE name = ${role}`
+    const roleId = roleResult.length > 0 ? roleResult[0].id : null
+
     const password_hash = await bcrypt.hash(password, 10)
-    const userRole = role || "CLIENTE"
-    const userClientId = userRole === "ADMIN" ? null : client_id
+    const userRole = role || "Cliente"
+    const userClientId = isAdminRole ? null : (client_id || null)
     
     const result = await sql`
-      INSERT INTO users (client_id, name, email, password_hash, role)
-      VALUES (${userClientId}, ${name}, ${email}, ${password_hash}, ${userRole})
-      RETURNING id, client_id, name, email, role, created_at
+      INSERT INTO users (client_id, name, email, password_hash, role, role_id)
+      VALUES (${userClientId}, ${name}, ${email}, ${password_hash}, ${userRole}, ${roleId})
+      RETURNING id, client_id, name, email, role, role_id, created_at
     `
 
     return NextResponse.json({ user: result[0] }, { status: 201 })
   } catch (error) {
     console.error("Error creating user:", error)
-    return NextResponse.json({ error: "Failed to create user" }, { status: 500 })
+    return NextResponse.json({ error: "Falha ao criar usuario" }, { status: 500 })
   }
 }
