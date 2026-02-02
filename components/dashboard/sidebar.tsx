@@ -33,7 +33,6 @@ import {
   MousePointer2,
   ImageIcon,
   FileText,
-  Shield,
 } from "lucide-react"
 import { useSidebar } from "./sidebar-context"
 
@@ -67,7 +66,6 @@ const adminNavItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/clientes", label: "Clientes", icon: Building2 },
   { href: "/admin/usuarios", label: "Usuários", icon: Users },
-  { href: "/admin/roles", label: "Roles", icon: Shield },
   { href: "/admin/mapa", label: "Mapa da Operação", icon: Map },
   { href: "/admin/relatorios-semanais", label: "Relatórios Semanais", icon: FileText },
   { href: "/admin/acessos", label: "Acessos", icon: Key },

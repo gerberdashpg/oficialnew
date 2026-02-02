@@ -50,11 +50,7 @@ export default async function AdminUsersPage() {
 
       <div className="px-4 sm:px-6 pb-6">
         <Card className="bg-[#0D0D12] border-purple-500/20 overflow-hidden">
-<<<<<<< HEAD
           <UsersTable users={users} clients={clients} roles={roles} userRole={session.role} />
-=======
-          <UsersTable users={users} clients={clients} roles={roles} />
->>>>>>> 14954a2f45efc73593ca66c937559d2d9a15171c
         </Card>
       </div>
     </div>

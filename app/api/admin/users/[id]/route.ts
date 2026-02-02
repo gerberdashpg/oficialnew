@@ -8,7 +8,10 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getSession()
-  if (!session || session.role !== "ADMIN") {
+
+  // Only ADMIN can edit users (Nexus Growth can only view)
+  const editRoles = ["ADMIN", "Administrador"]
+  if (!session || !editRoles.includes(session.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
@@ -84,7 +87,10 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getSession()
-  if (!session || session.role !== "ADMIN") {
+  
+  // Only ADMIN can delete users (Nexus Growth can only view)
+  const deleteRoles = ["ADMIN", "Administrador"]
+  if (!session || !deleteRoles.includes(session.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 

@@ -3,18 +3,6 @@ import { sql } from "@/lib/db"
 import { NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 
-function normalizeRole(input: string | undefined | null) {
-  const r = (input ?? "").trim();
-
-  if (!r) return "CLIENTE";
-  if (r === "ADMIN" || r === "Administrador") return "ADMIN";
-  if (r === "CLIENTE" || r === "Cliente") return "CLIENTE";
-  if (r === "NEXUS_GROWTH" || r === "Nexus Growth" || r === "NEXUS GROWTH")
-    return "NEXUS_GROWTH";
-
-  return null;
-}
-
 export async function GET() {
   const session = await getSession()
   const adminRoles = ["ADMIN", "Administrador", "Nexus Growth"]
