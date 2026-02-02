@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs"
 const SESSION_COOKIE = "pg_dash_session"
 
 export interface SessionUser {
+  userId: string
   id: string
   name: string
   email: string
@@ -97,6 +98,7 @@ export async function getSession(): Promise<SessionUser | null> {
     const user = result[0]
 
     return {
+      userId: user.id,
       id: user.id,
       name: user.name,
       email: user.email,
