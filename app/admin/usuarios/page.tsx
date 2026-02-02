@@ -4,8 +4,10 @@ import { redirect } from "next/navigation"
 import { DashboardHeader } from "@/components/dashboard/header"
 import { UsersTable } from "@/components/admin/users-table"
 import { Card } from "@/components/ui/card"
+import type { User } from "@/types/user"
+import type { Role } from "@/types/role"
 
-async function getUsers() {
+async function getUsers(): Promise<User[]> {
   return sql`
     SELECT 
       u.*,
@@ -17,11 +19,11 @@ async function getUsers() {
   `
 }
 
-async function getClients() {
+async function getClients(): Promise<Client[]> {
   return sql`SELECT id, name FROM clients ORDER BY name ASC`
 }
 
-async function getRoles() {
+async function getRoles(): Promise<Role[]> {
   return sql`SELECT id, name, color FROM roles ORDER BY is_system DESC, name ASC`
 }
 
